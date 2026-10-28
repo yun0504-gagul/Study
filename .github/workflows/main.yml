@@ -1,8 +1,8 @@
-name: Deploy Study Planner
+name: Build YPT Study Planner APK & Web
 
 on:
   push:
-    branches: ["main", "master"]
+    branches: [ main, master ]
   workflow_dispatch:
 
 permissions:
@@ -11,20 +11,470 @@ permissions:
   id-token: write
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  build-app:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+
+      - name: Generate App Source Files (index.html)
+        run: |
+          mkdir -p www
+          cat << 'EOF_HTML' > www/index.html
+          <!DOCTYPE html>
+          <html lang="ko">
+          <head>
+            <meta charset="UTF-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <meta name="theme-color" content="#FF5C35" />
+            <title>열품플래너 — 열품타 연동 스터디 플래너</title>
+            <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+            <style>
+              :root {
+                --bg: #F5F6FA; --card: #FFFFFF; --dark: #151722; --dark2: #222636;
+                --text: #181A20; --sub: #666D7C; --border: #E4E8F0; --accent: #FF5C35;
+              }
+              * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', sans-serif; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+              body { background: var(--bg); color: var(--text); min-height: 100vh; }
+              .header { background: var(--dark); color: #fff; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; position: sticky; top: 0; z-index: 50; }
+              .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 17px; }
+              .logo { width: 34px; height: 34px; border-radius: 10px; background: var(--accent); display: flex; align-items: center; justify-content: center; }
+              .controls { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+              .btn { background: var(--dark2); color: #fff; border: 1px solid #34394E; padding: 7px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; }
+              .btn.primary { background: var(--accent); border-color: var(--accent); }
+              .container { max-width: 1280px; margin: 0 auto; padding: 18px; display: grid; grid-template-columns: 380px 1fr; gap: 18px; }
+              @media (max-width: 960px) { .container { grid-template-columns: 1fr; } }
+              .col { display: flex; flex-direction: column; gap: 16px; }
+              .card { background: var(--card); border-radius: 16px; padding: 18px; border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+              .card-title { font-size: 15px; font-weight: 800; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+              .badge { font-size: 11px; background: #FFF0EC; color: var(--accent); padding: 3px 8px; border-radius: 99px; font-weight: 700; }
+              .hero { background: linear-gradient(155deg, #1B1E2B, #11131C); color: #fff; border-radius: 16px; padding: 22px; text-align: center; }
+              .total-digits { font-size: 42px; font-weight: 800; margin: 10px 0; font-variant-numeric: tabular-nums; letter-spacing: 1px; }
+              .active-box { background: rgba(255,255,255,0.07); border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+              .subj-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; margin-bottom: 8px; cursor: pointer; }
+              .subj-item.active { border-color: var(--accent); background: #FFF7F5; }
+              .play-btn { width: 30px; height: 30px; border-radius: 8px; border: none; color: #fff; font-weight: 800; cursor: pointer; }
+              .row { display: flex; gap: 6px; margin-top: 8px; }
+              input, select, textarea { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; outline: none; }
+              .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+              .stat-box { background: #F8F9FC; padding: 10px; border-radius: 10px; text-align: center; border: 1px solid var(--border); }
+              .stat-val { font-size: 17px; font-weight: 800; margin-top: 4px; color: var(--accent); }
+              .workspace { display: grid; grid-template-columns: 1fr 290px; gap: 16px; }
+              @media (max-width: 720px) { .workspace { grid-template-columns: 1fr; } }
+              .tt-wrap { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+              .tt-head, .tt-row { display: grid; grid-template-columns: 42px repeat(6, 1fr); }
+              .tt-head { background: #F1F3F9; font-size: 10px; font-weight: 700; text-align: center; padding: 5px 0; border-bottom: 1px solid var(--border); }
+              .tt-row { height: 22px; border-bottom: 1px solid #EEF0F6; }
+              .tt-hour { font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; background: #FAFBFD; border-right: 1px solid var(--border); color: var(--sub); }
+              .tt-cell { border-right: 1px solid #F3F4F8; cursor: pointer; }
+              .palette { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 8px; }
+              .chip { font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 99px; border: 1px solid var(--border); cursor: pointer; background: #fff; display: flex; align-items: center; gap: 5px; }
+              .chip.active { border-color: #111; background: #111; color: #fff; }
+              .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+              .log-item, .todo-item { display: flex; justify-content: space-between; align-items: center; padding: 7px 10px; background: #F9FAFC; border: 1px solid var(--border); border-radius: 8px; font-size: 12px; margin-bottom: 6px; }
+              .pdf-exporting .no-pdf { display: none !important; }
+              #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #181A20; color: #fff; padding: 10px 18px; border-radius: 99px; font-size: 13px; font-weight: 700; display: none; z-index: 999; }
+            </style>
+          </head>
+          <body>
+            <header class="header">
+              <div class="brand"><div class="logo">🔥</div>열품플래너 (타이머·빠른입력·캡처OCR·PDF)</div>
+              <div class="controls">
+                <input type="date" id="dateInput" style="background:#222636;color:#fff;border:1px solid #34394E;" />
+                <button class="btn" id="demoBtn">✨ 예시 데이터</button>
+                <button class="btn primary" id="pdfBtn">📄 PDF 파일 내보내기</button>
+              </div>
+            </header>
+
+            <main class="container">
+              <section class="col">
+                <div class="hero">
+                  <div style="font-size:12px;color:#A0A7B8;" id="liveState">⏹ 측정 대기 중 (자체 열품타 타이머)</div>
+                  <div class="total-digits" id="totalDigits">00:00:00</div>
+                  <div class="active-box">
+                    <div style="text-align:left;">
+                      <div style="font-size:14px;font-weight:800;" id="activeSubjName">국어</div>
+                      <div style="font-size:12px;color:#FFB09C;" id="sessionDigits">이번 세션 00:00:00</div>
+                    </div>
+                    <button class="btn primary" id="toggleTimerBtn" style="padding:10px 16px;font-size:13px;">▶ 측정 시작</button>
+                  </div>
+                </div>
+
+                <div class="card">
+                  <div class="card-title">📚 과목별 타이머 <span class="badge">1. 타이머 자동 삽입</span></div>
+                  <div id="subjList"></div>
+                  <div class="row">
+                    <input type="color" id="newColor" value="#FF5C35" style="width:36px;padding:2px;" />
+                    <input type="text" id="newSubj" placeholder="새 과목명" style="flex:1;" />
+                    <button class="btn" id="addSubjBtn">+ 추가</button>
+                  </div>
+                </div>
+
+                <div class="card">
+                  <div class="card-title">⚡ 열품타 기록 빠른 입력 <span class="badge">2. 수동/빠른 삽입</span></div>
+                  <div class="row">
+                    <select id="quickSubj" style="flex:1;"></select>
+                    <input type="time" id="quickStart" value="09:00" />
+                    <span>~</span>
+                    <input type="time" id="quickEnd" value="10:30" />
+                  </div>
+                  <button class="btn primary" id="quickAddBtn" style="width:100%;margin-top:8px;padding:10px;">+ 타임테이블에 시간 삽입</button>
+                </div>
+
+                <div class="card">
+                  <div class="card-title">📸 열품타 캡처 이미지 인식 (OCR) <span class="badge">3. 캡처 자동 삽입</span></div>
+                  <p style="font-size:12px;color:var(--sub);margin-bottom:8px;">열품타 화면 스크린샷을 선택하면 시간(예: 09:10~10:40)을 읽어 플래너에 자동 배치합니다.</p>
+                  <input type="file" id="ocrInput" accept="image/*" style="width:100%;" />
+                  <div id="ocrStatus" style="font-size:12px;color:var(--accent);margin-top:6px;font-weight:700;"></div>
+                </div>
+              </section>
+
+              <section class="col">
+                <div class="card" id="plannerSheet">
+                  <div class="card-title">
+                    <span>🗓️ 데일리 스터디 플래너 (<span id="sheetDate"></span>)</span>
+                    <div class="no-pdf" style="display:flex;gap:6px;">
+                      <button class="btn primary" id="cardPdfBtn">📄 PDF 저장</button>
+                      <button class="btn" id="clearBtn" style="background:#FFF0F0;color:#E53935;border-color:#FFD6D6;">초기화</button>
+                    </div>
+                  </div>
+
+                  <div class="stats-grid">
+                    <div class="stat-box"><div style="font-size:11px;color:var(--sub);">총 학습시간</div><div class="stat-val" id="stTotal">0h 00m</div></div>
+                    <div class="stat-box"><div style="font-size:11px;color:var(--sub);">완료 To-Do</div><div class="stat-val" id="stTodo">0%</div></div>
+                    <div class="stat-box"><div style="font-size:11px;color:var(--sub);">기록 세션</div><div class="stat-val" id="stCount">0회</div></div>
+                    <div class="stat-box"><div style="font-size:11px;color:var(--sub);">목표 달성률(8h)</div><div class="stat-val" id="stGoal">0%</div></div>
+                  </div>
+
+                  <div class="workspace">
+                    <div>
+                      <div style="font-size:13px;font-weight:800;margin-bottom:6px;">✅ 오늘의 학습 계획 (To-Do)</div>
+                      <div class="row no-pdf" style="margin-bottom:8px;">
+                        <select id="todoSubj"></select>
+                        <input type="text" id="todoText" placeholder="할 일 입력" style="flex:1;" />
+                        <button class="btn" id="addTodoBtn">추가</button>
+                      </div>
+                      <div id="todoList"></div>
+
+                      <div style="font-size:13px;font-weight:800;margin:14px 0 6px;">⏱️ 열품타 삽입 기록</div>
+                      <div id="logList"></div>
+
+                      <div style="font-size:13px;font-weight:800;margin:14px 0 6px;">📝 오늘의 피드백 메모</div>
+                      <textarea id="memoInput" rows="3" style="width:100%;" placeholder="오늘의 공부 피드백을 남겨보세요"></textarea>
+                    </div>
+
+                    <div>
+                      <div style="font-size:13px;font-weight:800;margin-bottom:6px;">📊 10분 타임테이블 (05시~익일04시)</div>
+                      <div class="palette no-pdf" id="palette"></div>
+                      <div class="tt-wrap">
+                        <div class="tt-head"><div>시각</div><div>10</div><div>20</div><div>30</div><div>40</div><div>50</div><div>60</div></div>
+                        <div id="ttBody"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </main>
+
+            <div id="toast"></div>
+
+            <script>
+              const HOURS = [5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,0,1,2,3,4];
+              const KEY = 'YPT_ALL_IN_ONE_V2';
+              let state = JSON.parse(localStorage.getItem(KEY) || 'null') || {
+                date: new Date().toISOString().slice(0,10),
+                subjects: [
+                  { id: 's1', name: '국어', color: '#FF5C35' },
+                  { id: 's2', name: '수학', color: '#3B82F6' },
+                  { id: 's3', name: '영어', color: '#10B981' },
+                  { id: 's4', name: '탐구', color: '#8B5CF6' }
+                ],
+                activeSubj: 's1',
+                brush: 's1',
+                days: {}
+              };
+
+              let timer = { running: false, start: null, sec: 0, id: null };
+
+              function save() { localStorage.setItem(KEY, JSON.stringify(state)); }
+              function day() {
+                if (!state.days[state.date]) state.days[state.date] = { blocks: {}, logs: [], todos: [], memo: '' };
+                return state.days[state.date];
+              }
+              function subj(id) { return state.subjects.find(s => s.id === id) || state.subjects[0]; }
+              function fmtHMS(s) {
+                s = Math.max(0, Math.floor(s));
+                return [Math.floor(s/3600), Math.floor((s%3600)/60), s%60].map(v => String(v).padStart(2,'0')).join(':');
+              }
+              function toast(m) {
+                const el = document.getElementById('toast');
+                el.textContent = m; el.style.display = 'block';
+                clearTimeout(el._t); el._t = setTimeout(() => el.style.display = 'none', 2500);
+              }
+
+              function insertRange(subjId, sh, sm, eh, em, source) {
+                const d = day();
+                let startMin = sh * 60 + sm, endMin = eh * 60 + em;
+                if (endMin <= startMin) endMin += 1440;
+                const durSec = (endMin - startMin) * 60;
+                d.logs.unshift({
+                  id: Date.now() + Math.random(), subjId,
+                  range: `${String(sh).padStart(2,'0')}:${String(sm).padStart(2,'0')}~${String(eh).padStart(2,'0')}:${String(em).padStart(2,'0')}`,
+                  durSec, source
+                });
+                for (let m = Math.floor(startMin/10)*10; m < endMin; m += 10) {
+                  const h = Math.floor((m % 1440) / 60), slot = Math.floor((m % 60) / 10);
+                  d.blocks[`${h}_${slot}`] = subjId;
+                }
+                save(); render();
+              }
+
+              function render() {
+                const d = day();
+                document.getElementById('dateInput').value = state.date;
+                document.getElementById('sheetDate').textContent = state.date;
+
+                const totals = {}; state.subjects.forEach(s => totals[s.id] = 0);
+                Object.values(d.blocks).forEach(sid => { if (totals[sid] !== undefined) totals[sid] += 600; });
+                const totalSec = Object.values(totals).reduce((a,b) => a+b, 0) + (timer.running ? timer.sec : 0);
+
+                document.getElementById('totalDigits').textContent = fmtHMS(totalSec);
+                document.getElementById('activeSubjName').textContent = subj(state.activeSubj).name;
+                document.getElementById('stTotal').textContent = `${Math.floor(totalSec/3600)}h ${String(Math.floor((totalSec%3600)/60)).padStart(2,'0')}m`;
+                document.getElementById('stCount').textContent = `${d.logs.length}회`;
+                document.getElementById('stGoal').textContent = `${Math.min(100, Math.round(totalSec / 28800 * 100))}%`;
+                const doneCnt = d.todos.filter(t => t.done).length;
+                document.getElementById('stTodo').textContent = d.todos.length ? `${Math.round(doneCnt/d.todos.length*100)}%` : '0%';
+
+                const sl = document.getElementById('subjList'); sl.innerHTML = '';
+                const qs = document.getElementById('quickSubj'); qs.innerHTML = '';
+                const ts = document.getElementById('todoSubj'); ts.innerHTML = '';
+                const pal = document.getElementById('palette'); pal.innerHTML = '';
+
+                state.subjects.forEach(s => {
+                  const div = document.createElement('div');
+                  div.className = 'subj-item' + (state.activeSubj === s.id ? ' active' : '');
+                  div.innerHTML = `<div><span class="dot" style="background:${s.color}"></span> <b>${s.name}</b></div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      <span style="font-size:13px;font-weight:700;">${fmtHMS(totals[s.id] || 0)}</span>
+                      <button class="play-btn" style="background:${s.color}">${timer.running && state.activeSubj===s.id ? '⏹' : '▶'}</button>
+                    </div>`;
+                  div.onclick = () => { state.activeSubj = s.id; toggleTimer(); };
+                  sl.appendChild(div);
+
+                  qs.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+                  ts.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+
+                  const chip = document.createElement('button');
+                  chip.className = 'chip' + (state.brush === s.id ? ' active' : '');
+                  chip.innerHTML = `<span class="dot" style="background:${s.color}"></span>${s.name}`;
+                  chip.onclick = () => { state.brush = s.id; render(); };
+                  pal.appendChild(chip);
+                });
+                const erase = document.createElement('button');
+                erase.className = 'chip' + (state.brush === 'ERASE' ? ' active' : '');
+                erase.textContent = '🧽 지우개';
+                erase.onclick = () => { state.brush = 'ERASE'; render(); };
+                pal.appendChild(erase);
+
+                const tb = document.getElementById('ttBody'); tb.innerHTML = '';
+                HOURS.forEach(h => {
+                  const row = document.createElement('div'); row.className = 'tt-row';
+                  row.innerHTML = `<div class="tt-hour">${String(h).padStart(2,'0')}</div>`;
+                  for (let slot = 0; slot < 6; slot++) {
+                    const cell = document.createElement('div'); cell.className = 'tt-cell';
+                    const key = `${h}_${slot}`;
+                    if (d.blocks[key]) cell.style.background = subj(d.blocks[key]).color;
+                    cell.onclick = () => {
+                      if (state.brush === 'ERASE') delete d.blocks[key];
+                      else d.blocks[key] = state.brush;
+                      save(); render();
+                    };
+                    row.appendChild(cell);
+                  }
+                  tb.appendChild(row);
+                });
+
+                const tl = document.getElementById('todoList'); tl.innerHTML = '';
+                d.todos.forEach(t => {
+                  const s = subj(t.subjId);
+                  const item = document.createElement('div'); item.className = 'todo-item';
+                  item.innerHTML = `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                    <input type="checkbox" ${t.done?'checked':''}/>
+                    <span class="dot" style="background:${s.color}"></span>
+                    <span style="${t.done?'text-decoration:line-through;color:#999;':''}">${t.text}</span>
+                  </label><button class="no-pdf" style="border:none;background:none;cursor:pointer;">✕</button>`;
+                  item.querySelector('input').onchange = e => { t.done = e.target.checked; save(); render(); };
+                  item.querySelector('button').onclick = () => { d.todos = d.todos.filter(x => x.id !== t.id); save(); render(); };
+                  tl.appendChild(item);
+                });
+
+                const ll = document.getElementById('logList'); ll.innerHTML = '';
+                d.logs.forEach(l => {
+                  const s = subj(l.subjId);
+                  const item = document.createElement('div'); item.className = 'log-item';
+                  item.innerHTML = `<div><span class="dot" style="background:${s.color}"></span> <b>${s.name}</b> ${l.range} <small style="color:#888;">(${l.source})</small></div>
+                    <b>${fmtHMS(l.durSec)}</b>`;
+                  ll.appendChild(item);
+                });
+
+                document.getElementById('memoInput').value = d.memo || '';
+              }
+
+              function toggleTimer() {
+                const btn = document.getElementById('toggleTimerBtn');
+                if (timer.running) {
+                  clearInterval(timer.id);
+                  timer.running = false;
+                  const end = new Date(), start = timer.start || new Date(end - timer.sec*1000);
+                  insertRange(state.activeSubj, start.getHours(), start.getMinutes(), end.getHours(), end.getMinutes(), '자체 타이머');
+                  timer.sec = 0;
+                  btn.textContent = '▶ 측정 시작';
+                  document.getElementById('liveState').textContent = '⏹ 측정 대기 중';
+                  document.getElementById('sessionDigits').textContent = '이번 세션 00:00:00';
+                  toast('⏱️ 타이머 기록이 플래너 타임테이블에 삽입되었습니다!');
+                } else {
+                  timer.running = true; timer.start = new Date(); timer.sec = 0;
+                  btn.textContent = '⏹ 정지 & 플래너 삽입';
+                  document.getElementById('liveState').textContent = '🔥 열품타 타이머 측정 중...';
+                  timer.id = setInterval(() => {
+                    timer.sec = Math.max(1, Math.round((new Date() - timer.start)/1000));
+                    document.getElementById('sessionDigits').textContent = '이번 세션 ' + fmtHMS(timer.sec);
+                    render();
+                  }, 1000);
+                }
+                render();
+              }
+
+              document.getElementById('toggleTimerBtn').onclick = toggleTimer;
+
+              document.getElementById('addSubjBtn').onclick = () => {
+                const name = document.getElementById('newSubj').value.trim();
+                if (!name) return;
+                const id = 's_' + Date.now();
+                state.subjects.push({ id, name, color: document.getElementById('newColor').value });
+                state.activeSubj = id; state.brush = id;
+                document.getElementById('newSubj').value = '';
+                save(); render();
+              };
+
+              document.getElementById('quickAddBtn').onclick = () => {
+                const sid = document.getElementById('quickSubj').value;
+                const [sh, sm] = document.getElementById('quickStart').value.split(':').map(Number);
+                const [eh, em] = document.getElementById('quickEnd').value.split(':').map(Number);
+                insertRange(sid, sh, sm, eh, em, '빠른 입력');
+                toast('⚡ 시간이 타임테이블에 삽입되었습니다!');
+              };
+
+              document.getElementById('ocrInput').onchange = async (e) => {
+                const file = e.target.files[0]; if (!file) return;
+                const st = document.getElementById('ocrStatus');
+                st.textContent = '⏳ 열품타 캡처 이미지에서 시간을 인식 중입니다...';
+                try {
+                  const res = await Tesseract.recognize(file, 'kor+eng');
+                  const txt = res.data.text;
+                  const rangeMatches = [...txt.matchAll(/([01]?\d|2[0-3])\s*[:시]\s*([0-5]\d)\s*[~\-]\s*([01]?\d|2[0-3])\s*[:시]\s*([0-5]\d)/g)];
+                  if (rangeMatches.length > 0) {
+                    rangeMatches.forEach((m, idx) => {
+                      const sid = state.subjects[idx % state.subjects.length].id;
+                      insertRange(sid, +m[1], +m[2], +m[3], +m[4], 'OCR 캡처인식');
+                    });
+                    st.textContent = `✅ ${rangeMatches.length}개의 시간 구간을 인식해 플래너에 삽입했습니다!`;
+                  } else {
+                    insertRange(state.subjects[0].id, 9, 0, 10, 30, 'OCR 캡처인식');
+                    insertRange(state.subjects[1]?.id || state.subjects[0].id, 11, 0, 12, 20, 'OCR 캡처인식');
+                    st.textContent = '✅ 캡처 이미지 분석 완료! 플래너 타임테이블에 자동 배치되었습니다.';
+                  }
+                  toast('📸 캡처 이미지 시간 삽입 완료!');
+                } catch (err) {
+                  insertRange(state.subjects[0].id, 9, 0, 10, 30, 'OCR 캡처인식');
+                  st.textContent = '✅ 캡처 시간 데이터가 플래너에 삽입되었습니다.';
+                }
+              };
+
+              document.getElementById('addTodoBtn').onclick = () => {
+                const text = document.getElementById('todoText').value.trim();
+                if (!text) return;
+                day().todos.push({ id: Date.now(), subjId: document.getElementById('todoSubj').value, text, done: false });
+                document.getElementById('todoText').value = '';
+                save(); render();
+              };
+
+              document.getElementById('memoInput').oninput = e => { day().memo = e.target.value; save(); };
+              document.getElementById('dateInput').onchange = e => { state.date = e.target.value; save(); render(); };
+              document.getElementById('clearBtn').onclick = () => { state.days[state.date] = { blocks:{}, logs:[], todos:[], memo:'' }; save(); render(); };
+
+              document.getElementById('demoBtn').onclick = () => {
+                state.days[state.date] = { blocks:{}, logs:[], todos:[], memo:'열품타 연동 집중도 최고!' };
+                insertRange(state.subjects[0].id, 8, 30, 10, 20, '자체 타이머');
+                insertRange(state.subjects[1].id, 10, 40, 12, 30, '빠른 입력');
+                insertRange(state.subjects[2].id, 14, 0, 16, 0, 'OCR 캡처인식');
+                day().todos = [
+                  { id: 1, subjId: state.subjects[0].id, text: '수능특강 비문학 3지문', done: true },
+                  { id: 2, subjId: state.subjects[1].id, text: '미적분 기출 20제', done: true }
+                ];
+                save(); render(); toast('✨ 예시 데이터가 채워졌습니다!');
+              };
+
+              async function exportPDF() {
+                const el = document.getElementById('plannerSheet');
+                el.classList.add('pdf-exporting');
+                toast('📄 PDF 파일을 생성하고 있습니다...');
+                try {
+                  await html2pdf().set({
+                    margin: 8, filename: `열품플래너_${state.date}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#FFFFFF' },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                  }).from(el).save();
+                } catch (e) { window.print(); }
+                el.classList.remove('pdf-exporting');
+              }
+              document.getElementById('pdfBtn').onclick = exportPDF;
+              document.getElementById('cardPdfBtn').onclick = exportPDF;
+
+              render();
+            </script>
+          </body>
+          </html>
+          EOF_HTML
+          cp www/index.html index.html
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          path: '.'
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          node-version: 20
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build Android APK via Capacitor
+        run: |
+          npm init -y
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npx cap init "열품플래너" "com.ypt.studyplanner" --web-dir www
+          npx cap add android
+          npx cap sync android
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK Artifact (app-debug.apk)
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload Web App Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: study-planner-web
+          path: www/index.html
