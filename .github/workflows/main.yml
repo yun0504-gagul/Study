@@ -10,8 +10,9 @@
   <link rel="manifest" href="./manifest.json" />
   <title>열품플래너 — 열품타 연동형 스터디 플래너 앱</title>
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
-  <!-- PDF 직접 변환 다운로드 라이브러리 (html2pdf.js) -->
+  <!-- PDF 직접 변환 라이브러리 (html2pdf.js) + 캡처 이미지 OCR 인식 라이브러리 (Tesseract.js) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
     :root {
       --bg-main: #F6F7FB;
@@ -190,7 +191,7 @@
       margin: 0 auto;
       padding: 22px 20px 80px;
       display: grid;
-      grid-template-columns: 410px 1fr;
+      grid-template-columns: 420px 1fr;
       gap: 22px;
       align-items: start;
     }
@@ -227,7 +228,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       gap: 8px;
       flex-wrap: wrap;
     }
@@ -250,12 +251,12 @@
       color: var(--accent);
     }
 
-    /* YPT Dark Timer Card */
+    /* Mode 3: YPT Dark Timer Card */
     .timer-hero-card {
       background: linear-gradient(160deg, #1A1D29 0%, #12141D 100%);
       color: #fff;
       border-radius: var(--radius-lg);
-      padding: 26px 22px;
+      padding: 24px 22px;
       box-shadow: var(--shadow-md);
       position: relative;
       overflow: hidden;
@@ -331,7 +332,7 @@
 
     .total-time-display {
       text-align: center;
-      margin: 14px 0 8px;
+      margin: 12px 0 6px;
     }
 
     .total-time-label {
@@ -342,7 +343,7 @@
     }
 
     .total-time-digits {
-      font-size: 48px;
+      font-size: 46px;
       font-weight: 800;
       letter-spacing: 1.5px;
       font-variant-numeric: tabular-nums;
@@ -354,8 +355,8 @@
       background: rgba(255, 255, 255, 0.06);
       border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 14px;
-      padding: 14px 16px;
-      margin-top: 16px;
+      padding: 13px 15px;
+      margin-top: 14px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -390,8 +391,8 @@
     .main-timer-btn {
       border: none;
       border-radius: 12px;
-      padding: 10px 18px;
-      font-size: 14px;
+      padding: 10px 16px;
+      font-size: 13px;
       font-weight: 800;
       cursor: pointer;
       display: flex;
@@ -416,7 +417,7 @@
     }
 
     .progress-bar-wrap {
-      margin-top: 18px;
+      margin-top: 16px;
     }
 
     .progress-meta {
@@ -446,14 +447,14 @@
     .subject-list {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 9px;
     }
 
     .subject-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 14px;
+      padding: 11px 13px;
       border-radius: var(--radius-md);
       border: 1.5px solid var(--border);
       background: #FAFBFD;
@@ -475,36 +476,29 @@
     .subject-left {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 11px;
       min-width: 0;
     }
 
     .subject-play-btn {
-      width: 34px;
-      height: 34px;
+      width: 32px;
+      height: 32px;
       border-radius: 10px;
       border: none;
       display: flex;
       align-items: center;
       justify-content: center;
       color: #fff;
-      font-size: 13px;
+      font-size: 12px;
       cursor: pointer;
       flex-shrink: 0;
       box-shadow: 0 2px 6px rgba(0,0,0,0.12);
-    }
-
-    .subject-name-wrap {
-      min-width: 0;
     }
 
     .subject-name {
       font-weight: 700;
       font-size: 14px;
       color: var(--text-primary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
 
     .subject-sub {
@@ -544,11 +538,11 @@
     .add-form-row {
       display: flex;
       gap: 8px;
-      margin-top: 14px;
+      margin-top: 12px;
     }
 
     .input-text, .input-select {
-      padding: 10px 12px;
+      padding: 9px 11px;
       border-radius: 10px;
       border: 1px solid var(--border);
       font-size: 13px;
@@ -562,8 +556,8 @@
     }
 
     .input-color {
-      width: 40px;
-      height: 38px;
+      width: 38px;
+      height: 36px;
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 3px;
@@ -576,8 +570,8 @@
       color: #fff;
       border: none;
       border-radius: 10px;
-      padding: 0 14px;
-      font-size: 13px;
+      padding: 0 13px;
+      font-size: 12px;
       font-weight: 700;
       cursor: pointer;
       white-space: nowrap;
@@ -592,13 +586,39 @@
       color: #fff;
     }
 
-    /* Quick YPT Sync Form */
+    /* Mode 1 & Mode 2 Sync Tabs */
+    .sync-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      background: #F1F3F9;
+      padding: 4px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+    }
+
+    .sync-tab-btn {
+      border: none;
+      background: transparent;
+      padding: 8px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    .sync-tab-btn.active {
+      background: #fff;
+      color: var(--text-primary);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+
     .sync-box {
       background: #F8F9FC;
       border: 1px dashed #CBD2E1;
       border-radius: var(--radius-md);
       padding: 14px;
-      margin-top: 8px;
     }
 
     .sync-grid {
@@ -618,6 +638,32 @@
       font-size: 11px;
       font-weight: 700;
       color: var(--text-secondary);
+    }
+
+    /* OCR Dropzone */
+    .ocr-dropzone {
+      border: 2px dashed #FF8548;
+      background: #FFF9F6;
+      border-radius: 12px;
+      padding: 18px 14px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .ocr-dropzone:hover {
+      background: #FFF0EC;
+    }
+
+    .ocr-status {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: none;
     }
 
     /* Right Column: Planner Grid & Todo */
@@ -655,7 +701,6 @@
       font-variant-numeric: tabular-nums;
     }
 
-    /* Planner Layout: Left Todo/Memo + Right 10-min Timetable */
     .planner-workspace {
       display: grid;
       grid-template-columns: 1.05fr 1fr;
@@ -724,7 +769,6 @@
       border-right: 1px solid #F1F3F8;
       position: relative;
       cursor: pointer;
-      transition: transform 0.08s ease;
       overflow: hidden;
     }
 
@@ -745,7 +789,6 @@
       right: 0;
     }
 
-    /* Palette selector for manual painting */
     .paint-toolbar {
       display: flex;
       align-items: center;
@@ -834,7 +877,6 @@
       word-break: break-all;
     }
 
-    /* Session History Log */
     .session-log-list {
       display: flex;
       flex-direction: column;
@@ -867,7 +909,6 @@
       color: var(--text-primary);
     }
 
-    /* Subject Distribution Bar */
     .ratio-bar {
       height: 12px;
       border-radius: 999px;
@@ -910,11 +951,6 @@
       margin-top: 8px;
     }
 
-    .memo-textarea:focus {
-      border-color: var(--accent);
-      background: #fff;
-    }
-
     /* PDF Export Mode Cleanup */
     .pdf-exporting .no-pdf {
       display: none !important;
@@ -930,7 +966,6 @@
       grid-template-columns: repeat(4, 1fr) !important;
     }
 
-    /* Toast notification */
     #toast {
       position: fixed;
       bottom: 24px;
@@ -953,33 +988,13 @@
     }
 
     @media print {
-      @page {
-        size: A4 portrait;
-        margin: 10mm;
-      }
-      body {
-        background: #fff !important;
-      }
-      .app-header, .left-column, .no-print, .no-pdf {
-        display: none !important;
-      }
-      .main-container {
-        display: block;
-        padding: 0;
-        max-width: 100%;
-      }
-      .card {
-        box-shadow: none;
-        border: 1px solid #D0D5DD;
-        padding: 16px;
-      }
-      .planner-workspace {
-        grid-template-columns: 1.05fr 1fr !important;
-      }
-      .session-log-list {
-        max-height: none !important;
-        overflow: visible !important;
-      }
+      @page { size: A4 portrait; margin: 10mm; }
+      body { background: #fff !important; }
+      .app-header, .left-column, .no-print, .no-pdf { display: none !important; }
+      .main-container { display: block; padding: 0; max-width: 100%; }
+      .card { box-shadow: none; border: 1px solid #D0D5DD; padding: 16px; }
+      .planner-workspace { grid-template-columns: 1.05fr 1fr !important; }
+      .session-log-list { max-height: none !important; overflow: visible !important; }
     }
   </style>
 </head>
@@ -991,7 +1006,7 @@
       <div class="brand-logo">🔥</div>
       <div>
         <div class="brand-title">열품플래너 (YPT Study Planner)</div>
-        <div class="brand-sub">열품타형 과목 타이머 + 10분 타임테이블 자동 삽입 · PDF 내보내기</div>
+        <div class="brand-sub">1.캡처 OCR 자동인식 · 2.빠른 시간입력 · 3.자체 열품타 타이머 + PDF 내보내기</div>
       </div>
     </div>
 
@@ -1001,29 +1016,29 @@
         <input type="date" id="currentDateInput" />
         <button class="date-nav-btn" id="nextDayBtn" title="다음 날짜">▶</button>
       </div>
-      <button class="header-btn" id="demoFillBtn" title="샘플 공부 기록 채우기">✨ 예시 데이터 채우기</button>
-      <button class="header-btn" id="exportDataBtn" title="백업 파일 저장">💾 백업</button>
-      <button class="header-btn" id="importDataBtn" title="백업 파일 불러오기">📂 불러오기</button>
+      <button class="header-btn" id="demoFillBtn">✨ 예시 데이터 채우기</button>
+      <button class="header-btn" id="exportDataBtn">💾 백업</button>
+      <button class="header-btn" id="importDataBtn">📂 불러오기</button>
       <input type="file" id="importFileInput" accept=".json" style="display:none" />
-      <button class="header-btn primary" id="downloadPdfBtn" title="오늘의 스터디 플래너를 PDF 파일로 즉시 다운로드">📄 PDF 파일 내보내기</button>
-      <button class="header-btn" onclick="window.print()" title="프린터 인쇄">🖨️ 인쇄</button>
+      <button class="header-btn primary" id="downloadPdfBtn">📄 PDF 파일 내보내기</button>
+      <button class="header-btn" onclick="window.print()">🖨️ 인쇄</button>
     </div>
   </header>
 
   <!-- Main Content -->
   <main class="main-container">
     
-    <!-- LEFT COLUMN: YPT Timer + Subjects + Manual YPT Sync -->
+    <!-- LEFT COLUMN: 3-Way YPT Sync Engine -->
     <section class="left-column">
       
-      <!-- 1. YPT Built-in Stopwatch Card -->
+      <!-- [방식 3] 자체 열품타형 스톱워치 내장 + 플래너 실시간 자동 연동 -->
       <div class="timer-hero-card">
         <div class="timer-status-row">
           <div class="live-indicator" id="liveIndicator">
             <span class="live-dot"></span>
             <span id="liveStatusText">휴식 중 · 과목을 눌러 시작하세요</span>
           </div>
-          <div class="goal-pill" id="goalSettingBtn" title="클릭하여 목표 시간 변경">
+          <div class="goal-pill" id="goalSettingBtn">
             🎯 목표 <span id="goalTimeText">08:00:00</span> ✎
           </div>
         </div>
@@ -1041,9 +1056,7 @@
               <div class="active-session-timer" id="currentSessionTimer">현재 구간 00:00:00</div>
             </div>
           </div>
-          <button class="main-timer-btn start" id="mainToggleBtn">
-            ▶ 측정 시작
-          </button>
+          <button class="main-timer-btn start" id="mainToggleBtn">▶ 측정 시작</button>
         </div>
 
         <div class="progress-bar-wrap">
@@ -1057,12 +1070,12 @@
         </div>
       </div>
 
-      <!-- 2. Subject List & Management -->
+      <!-- 과목별 열품타 타이머 리스트 -->
       <div class="card">
         <div class="card-header">
           <div class="card-title">
-            📚 과목별 열품타 타이머
-            <span class="badge">클릭 시 즉시 측정 & 플래너 기록</span>
+            📚 [방식 3] 자체 열품타 과목 타이머
+            <span class="badge">측정 즉시 플래너 삽입</span>
           </div>
         </div>
 
@@ -1075,19 +1088,25 @@
         </div>
       </div>
 
-      <!-- 3. External YPT Record Quick Importer -->
+      <!-- [방식 1 & 방식 2] 열품타 캡처 OCR 자동 인식 & 빠른 기록 입력 -->
       <div class="card">
         <div class="card-header">
           <div class="card-title">
-            📲 열품타 앱 기록 직접 삽입
-            <span class="badge">수동/외부 연동</span>
+            📲 열품타 외부 기록 연동
+            <span class="badge">방식 1 (OCR) & 방식 2 (빠른입력)</span>
           </div>
         </div>
-        <p style="font-size:12px; color:var(--text-secondary); line-height:1.5;">
-          휴대폰 열품타 앱에서 측정한 공부 시작~종료 시각을 입력하면, 우측 스터디 플래너 10분 타임테이블과 총 공부시간에 즉시 색칠·합산됩니다.
-        </p>
 
-        <div class="sync-box">
+        <div class="sync-tabs">
+          <button class="sync-tab-btn active" id="tabBtnQuick">⚡ 방식 2: 빠른 시간 입력</button>
+          <button class="sync-tab-btn" id="tabBtnOcr">📷 방식 1: 열품타 캡처 OCR</button>
+        </div>
+
+        <!-- 방식 2: 열품타 기록 빠른 입력 패널 -->
+        <div id="panelQuickInput" class="sync-box">
+          <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px; line-height:1.45;">
+            열품타에서 확인한 <strong>시작~종료 시각</strong> 또는 <strong>과목별 공부시간(분)</strong>을 빠르게 입력해 10분 타임테이블에 색칠합니다.
+          </p>
           <div class="sync-field">
             <label>과목 선택</label>
             <select id="manualSubjSelect" class="input-select"></select>
@@ -1102,15 +1121,40 @@
               <input type="time" id="manualEndTime" class="input-text" value="10:30" />
             </div>
           </div>
-          <button class="btn-small btn-accent" id="manualInsertBtn" style="width:100%; padding:11px; margin-top:10px;">
-            + 플래너 타임테이블에 시간 삽입하기
+          <button class="btn-small btn-accent" id="manualInsertBtn" style="width:100%; padding:10px; margin-top:10px;">
+            + 시작~종료 시각으로 타임테이블 색칠
+          </button>
+
+          <div style="border-top:1px solid var(--border); margin:12px 0; padding-top:10px;">
+            <label style="font-size:11px; font-weight:700; color:var(--text-secondary);">또는 공부한 시간(분)만 빠르게 블록 채우기</label>
+            <div style="display:flex; gap:6px; margin-top:6px;">
+              <input type="number" id="quickDurationMin" class="input-text" style="flex:1;" placeholder="분 입력 (예: 90)" min="10" max="600" value="60" />
+              <button class="btn-small" id="quickDurationBtn">빈 시간대에 자동 배치</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 방식 1: 열품타 캡처 이미지 OCR 자동 인식 패널 -->
+        <div id="panelOcrInput" class="sync-box" style="display:none;">
+          <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px; line-height:1.45;">
+            열품타 통계/과목별 공부시간 캡처 이미지를 올리면 <strong>OCR(광학 문자 인식)</strong>로 과목명과 시간(<code>HH:MM:SS</code>)을 추출하여 타임테이블에 자동 배치합니다.
+          </p>
+          <div class="ocr-dropzone" id="ocrDropzone">
+            <div style="font-size:24px; margin-bottom:4px;">🖼️</div>
+            <div style="font-size:13px; font-weight:800; color:var(--accent);">열품타 캡처 이미지 업로드 (클릭)</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">PNG, JPG 스크린샷 지원 · 과목명 및 00:00:00 자동 인식</div>
+          </div>
+          <input type="file" id="ocrFileInput" accept="image/*" style="display:none" />
+          <div class="ocr-status" id="ocrStatusBox"></div>
+          <button class="btn-small" id="ocrDemoSimBtn" style="width:100%; padding:10px; margin-top:10px; background:#222634;">
+            ⚡ 샘플 열품타 캡처 인식 시연 실행하기
           </button>
         </div>
       </div>
 
     </section>
 
-    <!-- RIGHT COLUMN: Study Planner (Stats + Todo + 10-min Timetable) -->
+    <!-- RIGHT COLUMN: Study Planner Sheet (Exportable to PDF) -->
     <section class="right-column">
       <div class="card" id="plannerSheetCard">
         <div class="card-header">
@@ -1158,10 +1202,7 @@
         <!-- Workspace: Left (To-Do + Log + Memo) / Right (10-min Grid) -->
         <div class="planner-workspace">
           
-          <!-- Left side of Planner Sheet -->
           <div style="display:flex; flex-direction:column; gap:18px;">
-            
-            <!-- To-Do Plan -->
             <div>
               <div style="font-size:14px; font-weight:800; margin-bottom:8px;">✅ 오늘의 학습 계획 (To-Do)</div>
               <div class="add-form-row no-pdf" style="margin-top:0;">
@@ -1172,34 +1213,29 @@
               <div class="todo-list" id="todoListContainer"></div>
             </div>
 
-            <!-- Auto-recorded Time Log -->
             <div>
               <div style="display:flex; justify-content:space-between; align-items:center;">
                 <div style="font-size:14px; font-weight:800;">⏱️ 열품타 타이머 삽입 기록</div>
-                <span style="font-size:11px; color:var(--text-muted);">자동/수동 세션 내역</span>
+                <span style="font-size:11px; color:var(--text-muted);">자동/OCR/수동 세션 내역</span>
               </div>
               <div class="session-log-list" id="sessionLogContainer"></div>
             </div>
 
-            <!-- Daily Reflection Memo -->
             <div>
               <div style="font-size:14px; font-weight:800;">📝 오늘의 피드백 & 다짐</div>
               <textarea id="dailyMemoInput" class="memo-textarea" placeholder="오늘 공부하며 느낀 점이나 내일 보완할 내용을 적어보세요 (자동 저장)"></textarea>
             </div>
-
           </div>
 
-          <!-- Right side of Planner Sheet: 24-Hour 10-Minute Timetable -->
+          <!-- 24-Hour 10-Minute Timetable -->
           <div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
               <div style="font-size:14px; font-weight:800;">📊 10분 단위 타임테이블 (05시~익일 04시)</div>
               <span style="font-size:11px; color:var(--text-muted);" class="no-pdf">셀 클릭 시 직접 색칠/지우기</span>
             </div>
 
-            <!-- Manual Paint Palette -->
             <div class="paint-toolbar no-print no-pdf" id="paintToolbar"></div>
 
-            <!-- 10-Min Grid -->
             <div class="timetable-container">
               <div class="timetable-header">
                 <div>시각</div>
@@ -1257,20 +1293,12 @@
 
     function getTodayString() {
       const now = new Date();
-      const yyyy = now.getFullYear();
-      const mm = String(now.getMonth() + 1).padStart(2, '0');
-      const dd = String(now.getDate()).padStart(2, '0');
-      return `${yyyy}-${mm}-${dd}`;
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     }
 
     function ensureDayData(dateStr) {
       if (!state.days[dateStr]) {
-        state.days[dateStr] = {
-          sessions: [],
-          blocks: {},
-          todos: [],
-          memo: ''
-        };
+        state.days[dateStr] = { sessions: [], blocks: {}, todos: [], memo: '' };
       }
       return state.days[dateStr];
     }
@@ -1319,9 +1347,7 @@
       toast.textContent = msg;
       toast.classList.add('show');
       clearTimeout(toast._timer);
-      toast._timer = setTimeout(() => {
-        toast.classList.remove('show');
-      }, 2600);
+      toast._timer = setTimeout(() => toast.classList.remove('show'), 2600);
     }
 
     function getSubjectById(id) {
@@ -1338,7 +1364,7 @@
         totals[sess.subjectId] += sess.durationSec;
       });
 
-      Object.entries(day.blocks).forEach(([key, val]) => {
+      Object.entries(day.blocks).forEach(([, val]) => {
         if (val && val.manual) {
           if (totals[val.subjectId] === undefined) totals[val.subjectId] = 0;
           totals[val.subjectId] += 600;
@@ -1353,7 +1379,7 @@
       return totals;
     }
 
-    function insertTimeRangeToBlocks(dateStr, subjectId, startDateObj, endDateObj, isManualSync = false) {
+    function insertTimeRangeToBlocks(dateStr, subjectId, startDateObj, endDateObj, sourceLabel = '타이머 자동 기록') {
       const day = ensureDayData(dateStr);
       const durationSec = Math.max(1, Math.round((endDateObj - startDateObj) / 1000));
 
@@ -1368,13 +1394,12 @@
         startTimeStr: `${startHH}:${startMM}`,
         endTimeStr: `${endHH}:${endMM}`,
         durationSec,
-        source: isManualSync ? '열품타 시간 삽입' : '타이머 자동 기록'
+        source: sourceLabel
       });
 
       let cursor = new Date(startDateObj.getTime());
       cursor.setSeconds(0, 0);
-      const startMinute = cursor.getMinutes();
-      cursor.setMinutes(Math.floor(startMinute / 10) * 10);
+      cursor.setMinutes(Math.floor(cursor.getMinutes() / 10) * 10);
 
       while (cursor < endDateObj) {
         const slotStart = new Date(cursor.getTime());
@@ -1403,10 +1428,35 @@
       renderAll();
     }
 
-    function startLiveTimer(subjectId) {
-      if (timerRuntime.isRunning) {
-        stopLiveTimer(false);
+    function autoAllocateDurationToEmptySlots(dateStr, subjectId, durationSec, sourceLabel) {
+      const day = ensureDayData(dateStr);
+      const slotsNeeded = Math.max(1, Math.round(durationSec / 600));
+
+      let startHour = 9;
+      let startSlot = 0;
+      let found = false;
+
+      for (const h of STUDY_HOURS) {
+        if (h < 8 && h >= 5) continue;
+        for (let s = 0; s < 6; s++) {
+          if (!day.blocks[`${h}_${s}`]) {
+            startHour = h;
+            startSlot = s;
+            found = true;
+            break;
+          }
+        }
+        if (found) break;
       }
+
+      const startObj = new Date();
+      startObj.setHours(startHour, startSlot * 10, 0, 0);
+      const endObj = new Date(startObj.getTime() + slotsNeeded * 10 * 60 * 1000);
+      insertTimeRangeToBlocks(dateStr, subjectId, startObj, endObj, sourceLabel);
+    }
+
+    function startLiveTimer(subjectId) {
+      if (timerRuntime.isRunning) stopLiveTimer(false);
       state.selectedSubjectId = subjectId;
       timerRuntime.isRunning = true;
       timerRuntime.subjectId = subjectId;
@@ -1437,7 +1487,7 @@
       timerRuntime.startTimestamp = null;
       timerRuntime.elapsedSeconds = 0;
 
-      insertTimeRangeToBlocks(state.currentDate, subj.id, startObj, endObj, false);
+      insertTimeRangeToBlocks(state.currentDate, subj.id, startObj, endObj, '타이머 자동 기록');
 
       if (notify) {
         showToast(`✅ [${subj.name}] ${formatHMS(elapsedSec)} 공부 기록이 플래너에 자동 삽입되었습니다!`);
@@ -1501,11 +1551,7 @@
               if (day.blocks[key] && day.blocks[key].subjectId === state.paintBrushSubjectId) {
                 delete day.blocks[key];
               } else {
-                day.blocks[key] = {
-                  subjectId: state.paintBrushSubjectId,
-                  ratio: 1,
-                  manual: true
-                };
+                day.blocks[key] = { subjectId: state.paintBrushSubjectId, ratio: 1, manual: true };
               }
             }
             saveState();
@@ -1588,10 +1634,10 @@
 
         item.innerHTML = `
           <div class="subject-left">
-            <button class="subject-play-btn" style="background:${subj.color}" title="${isCurrentRunning ? '측정 정지' : '이 과목 측정 시작'}">
+            <button class="subject-play-btn" style="background:${subj.color}">
               ${isCurrentRunning ? '⏹' : '▶'}
             </button>
-            <div class="subject-name-wrap">
+            <div>
               <div class="subject-name">${subj.name}</div>
               <div class="subject-sub">${isCurrentRunning ? '🔥 현재 측정 중 · 종료 시 자동 기록' : '클릭하여 타이머 시작'}</div>
             </div>
@@ -1603,24 +1649,17 @@
         `;
 
         item.querySelector('.subject-left').addEventListener('click', () => {
-          if (isCurrentRunning) {
-            stopLiveTimer(true);
-          } else {
-            startLiveTimer(subj.id);
-          }
+          if (isCurrentRunning) stopLiveTimer(true);
+          else startLiveTimer(subj.id);
         });
 
         const delBtn = item.querySelector('.del-subj-btn');
         if (delBtn) {
           delBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            if (timerRuntime.isRunning && timerRuntime.subjectId === subj.id) {
-              stopLiveTimer(false);
-            }
+            if (timerRuntime.isRunning && timerRuntime.subjectId === subj.id) stopLiveTimer(false);
             state.subjects = state.subjects.filter(s => s.id !== subj.id);
-            if (state.selectedSubjectId === subj.id) {
-              state.selectedSubjectId = state.subjects[0].id;
-            }
+            if (state.selectedSubjectId === subj.id) state.selectedSubjectId = state.subjects[0].id;
             saveState();
             renderAll();
             showToast(`과목 [${subj.name}]이 삭제되었습니다.`);
@@ -1663,9 +1702,7 @@
       document.getElementById('statTotalTime').textContent = formatHMShort(totalSec);
 
       let maxFocusSec = 0;
-      day.sessions.forEach(s => {
-        if (s.durationSec > maxFocusSec) maxFocusSec = s.durationSec;
-      });
+      day.sessions.forEach(s => { if (s.durationSec > maxFocusSec) maxFocusSec = s.durationSec; });
       const maxFocusMin = Math.round(maxFocusSec / 60);
       document.getElementById('statMaxFocus').textContent = maxFocusMin >= 60
         ? `${Math.floor(maxFocusMin / 60)}h ${maxFocusMin % 60}m`
@@ -1777,14 +1814,12 @@
       renderPlannerStatsAndLogs();
     }
 
-    // Direct PDF File Export Function
     async function exportPlannerToPDF() {
       const target = document.getElementById('plannerSheetCard');
       const topBtn = document.getElementById('downloadPdfBtn');
       const cardBtn = document.getElementById('cardPdfExportBtn');
 
       if (typeof html2pdf === 'undefined') {
-        showToast('오프라인 상태여서 브라우저 기본 PDF 저장 창을 엽니다.');
         window.print();
         return;
       }
@@ -1802,20 +1837,13 @@
           margin: [8, 8, 8, 8],
           filename: filename,
           image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: '#FFFFFF',
-            logging: false
-          },
+          html2canvas: { scale: 2, useCORS: true, backgroundColor: '#FFFFFF', logging: false },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
         await html2pdf().set(opt).from(target).save();
         showToast(`✅ [${filename}] 파일이 다운로드되었습니다!`);
       } catch (err) {
-        console.error('PDF export error:', err);
-        showToast('PDF 변환 중 오류가 발생해 인쇄(PDF 저장) 창을 호출합니다.');
         window.print();
       } finally {
         target.classList.remove('pdf-exporting');
@@ -1825,7 +1853,42 @@
       }
     }
 
-    // Event Listeners Setup
+    async function handleOcrImageFile(file) {
+      const statusBox = document.getElementById('ocrStatusBox');
+      statusBox.style.display = 'block';
+      statusBox.textContent = '🔍 열품타 캡처 이미지에서 과목과 공부시간(HH:MM:SS)을 분석 중입니다...';
+
+      try {
+        const result = await Tesseract.recognize(file, 'kor+eng');
+        const text = result.data.text || '';
+        const timeRegex = /(\d{1,2}):(\d{2}):(\d{2})/g;
+        const matches = [...text.matchAll(timeRegex)];
+
+        if (matches.length === 0) {
+          statusBox.innerHTML = '⚠️ 이미지에서 <code>00:00:00</code> 형식의 시간 텍스트를 찾지 못했습니다. 아래 샘플 시연 버튼을 눌러보세요.';
+          return;
+        }
+
+        let insertedCount = 0;
+        matches.forEach((m, idx) => {
+          const hh = parseInt(m[1], 10);
+          const mm = parseInt(m[2], 10);
+          const ss = parseInt(m[3], 10);
+          const totalSec = hh * 3600 + mm * 60 + ss;
+          if (totalSec >= 60 && totalSec <= 16 * 3600) {
+            const subj = state.subjects[idx % state.subjects.length];
+            autoAllocateDurationToEmptySlots(state.currentDate, subj.id, totalSec, '열품타 캡처 OCR');
+            insertedCount++;
+          }
+        });
+
+        statusBox.innerHTML = `✅ OCR 인식 완료! 총 <strong>${insertedCount}개</strong>의 과목 시간 기록을 플래너에 자동 배치했습니다.`;
+        showToast(`📷 열품타 캡처에서 ${insertedCount}개 공부 기록을 플래너에 삽입했습니다!`);
+      } catch (e) {
+        statusBox.textContent = '⚠️ OCR 처리 중 오류가 발생했습니다: ' + e.message;
+      }
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
       loadState();
       renderAll();
@@ -1833,24 +1896,71 @@
       document.getElementById('downloadPdfBtn').addEventListener('click', exportPlannerToPDF);
       document.getElementById('cardPdfExportBtn').addEventListener('click', exportPlannerToPDF);
 
-      document.getElementById('mainToggleBtn').addEventListener('click', () => {
-        if (timerRuntime.isRunning) {
-          stopLiveTimer(true);
-        } else {
-          startLiveTimer(state.selectedSubjectId);
+      const tabQuick = document.getElementById('tabBtnQuick');
+      const tabOcr = document.getElementById('tabBtnOcr');
+      const panelQuick = document.getElementById('panelQuickInput');
+      const panelOcr = document.getElementById('panelOcrInput');
+
+      tabQuick.addEventListener('click', () => {
+        tabQuick.classList.add('active');
+        tabOcr.classList.remove('active');
+        panelQuick.style.display = 'block';
+        panelOcr.style.display = 'none';
+      });
+
+      tabOcr.addEventListener('click', () => {
+        tabOcr.classList.add('active');
+        tabQuick.classList.remove('active');
+        panelOcr.style.display = 'block';
+        panelQuick.style.display = 'none';
+      });
+
+      document.getElementById('ocrDropzone').addEventListener('click', () => {
+        document.getElementById('ocrFileInput').click();
+      });
+
+      document.getElementById('ocrFileInput').addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) {
+          handleOcrImageFile(e.target.files[0]);
         }
+      });
+
+      document.getElementById('ocrDemoSimBtn').addEventListener('click', () => {
+        const statusBox = document.getElementById('ocrStatusBox');
+        statusBox.style.display = 'block';
+        statusBox.innerHTML = '✅ <strong>[열품타 캡처 OCR 시연]</strong> 국어(01:30:00), 수학(02:00:00), 영어(01:10:00) 인식 완료 → 타임테이블 자동 삽입!';
+        const s0 = state.subjects[0]?.id || 'subj_kor';
+        const s1 = state.subjects[1]?.id || s0;
+        const s2 = state.subjects[2]?.id || s0;
+        autoAllocateDurationToEmptySlots(state.currentDate, s0, 90 * 60, '열품타 캡처 OCR');
+        autoAllocateDurationToEmptySlots(state.currentDate, s1, 120 * 60, '열품타 캡처 OCR');
+        autoAllocateDurationToEmptySlots(state.currentDate, s2, 70 * 60, '열품타 캡처 OCR');
+        showToast('📷 열품타 캡처 OCR 시연 데이터가 플래너에 자동 배치되었습니다!');
+      });
+
+      document.getElementById('quickDurationBtn').addEventListener('click', () => {
+        const subjId = document.getElementById('manualSubjSelect').value;
+        const mins = parseInt(document.getElementById('quickDurationMin').value, 10);
+        if (isNaN(mins) || mins <= 0) return;
+        autoAllocateDurationToEmptySlots(state.currentDate, subjId, mins * 60, '빠른 시간 입력');
+        const subj = getSubjectById(subjId);
+        showToast(`⚡ [${subj.name}] ${mins}분 기록이 빈 시간대에 자동 배치되었습니다!`);
+      });
+
+      document.getElementById('mainToggleBtn').addEventListener('click', () => {
+        if (timerRuntime.isRunning) stopLiveTimer(true);
+        else startLiveTimer(state.selectedSubjectId);
       });
 
       document.getElementById('goalSettingBtn').addEventListener('click', () => {
         const curHours = (state.goalSeconds / 3600).toFixed(1).replace('.0', '');
-        const input = prompt('하루 목표 공부 시간을 시간(시간 단위 숫자)으로 입력해주세요. (예: 8)', curHours);
+        const input = prompt('하루 목표 공부 시간을 시간 단위로 입력해주세요. (예: 8)', curHours);
         if (input !== null) {
           const h = parseFloat(input);
           if (!isNaN(h) && h > 0 && h <= 24) {
             state.goalSeconds = Math.round(h * 3600);
             saveState();
             renderAll();
-            showToast(`🎯 하루 목표 공부 시간이 ${h}시간으로 설정되었습니다.`);
           }
         }
       });
@@ -1859,53 +1969,31 @@
         const nameInput = document.getElementById('newSubjName');
         const colorInput = document.getElementById('newSubjColor');
         const name = nameInput.value.trim();
-        if (!name) {
-          showToast('과목 이름을 입력해주세요.');
-          return;
-        }
-        const newSubj = {
-          id: 'subj_' + Date.now(),
-          name,
-          color: colorInput.value || '#FF5C35'
-        };
+        if (!name) return;
+        const newSubj = { id: 'subj_' + Date.now(), name, color: colorInput.value || '#FF5C35' };
         state.subjects.push(newSubj);
         state.selectedSubjectId = newSubj.id;
         state.paintBrushSubjectId = newSubj.id;
         nameInput.value = '';
         saveState();
         renderAll();
-        showToast(`📚 [${name}] 과목이 추가되었습니다.`);
       });
 
       document.getElementById('manualInsertBtn').addEventListener('click', () => {
         const subjId = document.getElementById('manualSubjSelect').value;
         const startVal = document.getElementById('manualStartTime').value;
         const endVal = document.getElementById('manualEndTime').value;
-
-        if (!startVal || !endVal) {
-          showToast('시작 시각과 종료 시각을 모두 입력해주세요.');
-          return;
-        }
+        if (!startVal || !endVal) return;
 
         const [sh, sm] = startVal.split(':').map(Number);
         const [eh, em] = endVal.split(':').map(Number);
-
-        const baseDate = new Date();
-        baseDate.setSeconds(0, 0);
-
-        const startObj = new Date(baseDate.getTime());
+        const startObj = new Date();
         startObj.setHours(sh, sm, 0, 0);
-
-        const endObj = new Date(baseDate.getTime());
+        const endObj = new Date();
         endObj.setHours(eh, em, 0, 0);
+        if (endObj <= startObj) endObj.setDate(endObj.getDate() + 1);
 
-        if (endObj <= startObj) {
-          endObj.setDate(endObj.getDate() + 1);
-        }
-
-        insertTimeRangeToBlocks(state.currentDate, subjId, startObj, endObj, true);
-        const subj = getSubjectById(subjId);
-        showToast(`📲 [${subj.name}] ${startVal}~${endVal} 공부 시간이 플래너에 삽입되었습니다!`);
+        insertTimeRangeToBlocks(state.currentDate, subjId, startObj, endObj, '열품타 시간 삽입');
       });
 
       const addTodoHandler = () => {
@@ -1913,14 +2001,8 @@
         const subjId = document.getElementById('todoSubjSelect').value;
         const text = input.value.trim();
         if (!text) return;
-
         const day = ensureDayData(state.currentDate);
-        day.todos.push({
-          id: 'todo_' + Date.now(),
-          subjectId: subjId,
-          text,
-          done: false
-        });
+        day.todos.push({ id: 'todo_' + Date.now(), subjectId: subjId, text, done: false });
         input.value = '';
         saveState();
         renderPlannerStatsAndLogs();
@@ -1952,10 +2034,7 @@
         const parts = state.currentDate.split('-').map(Number);
         const d = new Date(parts[0], parts[1] - 1, parts[2]);
         d.setDate(d.getDate() + deltaDays);
-        const yyyy = d.getFullYear();
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const dd = String(d.getDate()).padStart(2, '0');
-        state.currentDate = `${yyyy}-${mm}-${dd}`;
+        state.currentDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         ensureDayData(state.currentDate);
         saveState();
         renderAll();
@@ -1970,7 +2049,6 @@
           state.days[state.currentDate] = { sessions: [], blocks: {}, todos: [], memo: '' };
           saveState();
           renderAll();
-          showToast('오늘의 플래너 기록이 초기화되었습니다.');
         }
       });
 
@@ -1978,23 +2056,17 @@
         const day = ensureDayData(state.currentDate);
         day.sessions = [];
         day.blocks = {};
-
-        const makeTime = (h, m) => {
-          const d = new Date();
-          d.setHours(h, m, 0, 0);
-          return d;
-        };
-
+        const makeTime = (h, m) => { const d = new Date(); d.setHours(h, m, 0, 0); return d; };
         const s0 = state.subjects[0]?.id || 'subj_kor';
         const s1 = state.subjects[1]?.id || s0;
         const s2 = state.subjects[2]?.id || s0;
         const s3 = state.subjects[3]?.id || s0;
 
-        insertTimeRangeToBlocks(state.currentDate, s0, makeTime(8, 30), makeTime(10, 20), false);
-        insertTimeRangeToBlocks(state.currentDate, s1, makeTime(10, 40), makeTime(12, 30), false);
-        insertTimeRangeToBlocks(state.currentDate, s2, makeTime(14, 0), makeTime(15, 50), true);
-        insertTimeRangeToBlocks(state.currentDate, s1, makeTime(16, 10), makeTime(18, 0), false);
-        insertTimeRangeToBlocks(state.currentDate, s3, makeTime(19, 30), makeTime(21, 40), true);
+        insertTimeRangeToBlocks(state.currentDate, s0, makeTime(8, 30), makeTime(10, 20), '타이머 자동 기록');
+        insertTimeRangeToBlocks(state.currentDate, s1, makeTime(10, 40), makeTime(12, 30), '타이머 자동 기록');
+        insertTimeRangeToBlocks(state.currentDate, s2, makeTime(14, 0), makeTime(15, 50), '열품타 캡처 OCR');
+        insertTimeRangeToBlocks(state.currentDate, s1, makeTime(16, 10), makeTime(18, 0), '타이머 자동 기록');
+        insertTimeRangeToBlocks(state.currentDate, s3, makeTime(19, 30), makeTime(21, 40), '열품타 시간 삽입');
 
         day.todos = [
           { id: 't1', subjectId: s0, text: '비문학 기출 지문 3세트 분석 및 오답노트', done: true },
@@ -2003,10 +2075,8 @@
           { id: 't4', subjectId: s3, text: '탐구 개념완성 4단원 복습 정리', done: false }
         ];
         day.memo = '오전 집중력이 아주 좋았다! 수학 오답 정리 시간을 내일은 20분 더 확보하자.';
-
         saveState();
         renderAll();
-        showToast('✨ 예시 열품타 시간표와 학습 계획이 플래너에 삽입되었습니다!');
       });
 
       document.getElementById('exportDataBtn').addEventListener('click', () => {
@@ -2017,7 +2087,6 @@
         document.body.appendChild(a);
         a.click();
         a.remove();
-        showToast('💾 플래너 백업 파일이 다운로드되었습니다.');
       });
 
       document.getElementById('importDataBtn').addEventListener('click', () => {
@@ -2035,13 +2104,8 @@
               state = imported;
               saveState();
               renderAll();
-              showToast('📂 백업 데이터를 성공적으로 불러왔습니다!');
-            } else {
-              showToast('올바른 열품플래너 백업 파일이 아닙니다.');
             }
-          } catch (err) {
-            showToast('파일을 읽는 중 오류가 발생했습니다.');
-          }
+          } catch (err) {}
         };
         reader.readAsText(file);
       });
@@ -2053,41 +2117,3 @@
   </script>
 </body>
 </html>
-{
-  "name": "열품플래너 (YPT Study Planner)",
-  "short_name": "열품플래너",
-  "description": "열품타 연동형 스터디 플래너 & 10분 타임테이블 자동 삽입 · PDF 내보내기 앱",
-  "start_url": "./index.html",
-  "display": "standalone",
-  "background_color": "#161822",
-  "theme_color": "#FF5C35",
-  "orientation": "portrait-primary"
-}
-const CACHE_NAME = 'ypt-planner-v1';
-const ASSETS = [
-  './',
-  './index.html',
-  './manifest.json'
-];
-
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
-  );
-  self.skipWaiting();
-});
-
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
-  );
-  self.clients.claim();
-});
-
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request))
-  );
-});
